@@ -9,8 +9,8 @@ import React from 'react';
 //   View,
 // } from 'react-native';
 import { ActivityIndicator, Dimensions, ImageBackground, StyleSheet, TouchableOpacity, View, } from 'react-native'
-import { Camera, Permissions, WebBrowser } from 'expo';
-import { Button, Icon, Text } from 'react-native-elements'
+import { Camera, Permissions, WebBrowser, ImagePicker } from 'expo';
+import { Button, Icon, Text, Image } from 'react-native-elements'
 
 import { MonoText } from '../components/StyledText';
 import Colors from '../constants/Colors';
@@ -22,8 +22,8 @@ export default class HomeScreen extends React.Component {
   state = {
     cameraOn: false,
     hasCameraPermission: null,
+    photo: null,
   };
-  camera = null;
 
   async componentDidMount() {
     const { status } = await Permissions.askAsync(Permissions.CAMERA);
@@ -41,16 +41,21 @@ export default class HomeScreen extends React.Component {
   }
 
   renderContent = () => {
-    const { cameraOn, hasCameraPermission } = this.state;
+    const { cameraOn, hasCameraPermission, photo } = this.state;
 
     if (hasCameraPermission === null) {
       return;
     } else if (hasCameraPermission === false) {
       return <Text>No access to camera</Text>;
     } else if (!cameraOn) {
-      return <Button onPress={this.toggleCamera} icon={<Icon name='camera-alt' type='material' size={300} color={Colors.brown} />} type="clear" />
+      return (
+        <View style={styles.buttons}>
+          <Button onPress={this.toggleCamera} icon={<Icon name='camera-alt' type='material' size={150} color={Colors.brown} />} type="clear" />
+          <Button onPress={this.addPhoto} icon={<Icon name='arrow-downward' type='material' size={150} color={Colors.brown} />} type="clear" />
+        </View>
+      )
     } else if (photo) {
-      return <Button onPress={this.toggleCamera} icon={<Icon name='camera-alt' type='material' size={300} color={Colors.brown} />} type="clear" />
+      return <Image style={styles.photo} source={photo && {uri: photo.uri}} PlaceholderContent={<ActivityIndicator />} />
     } else {
       return (
         <View style={styles.cameraAndButtonContainer}>
@@ -64,9 +69,28 @@ export default class HomeScreen extends React.Component {
     }
   }
 
-  snap = async () => {
+  addPhoto = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+
+    console.log(result);
+
+    if (!result.cancelled) {
+      this.setState({ photo: result.uri });
+    }
+  }
+
+  snap = () => {
     if (this.camera) {
-      let photo = await this.camera.takePictureAsync();
+      try {
+        let photo = this.camera.takePictureAsync().then(photo => {
+          this.setState({ photo })
+        })
+      } catch (err) {
+        alert(err); // TypeError: failed to fetch
+      }
     }
   }
 
@@ -82,6 +106,9 @@ const styles = StyleSheet.create({
   backgroundImage: {
     height: '100%',
     width: '100%'
+  },
+  buttons: {
+    flexDirection: 'row'
   },
   camera: {
     // backgroundColor: Colors.brown,
@@ -106,6 +133,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     opacity: 1,
   },
+  photo: {
+    height: 1 * fullWidth,
+    width: 0.8 * fullWidth,
+  }
 })
 
         // <View style={styles.container}>

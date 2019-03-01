@@ -11,7 +11,10 @@ const white = '#f6e5c7'
 const gray = '#ccc'
 
 export default {
-  white: '#f6e5c7',
+  white,
+  coral,
+  green,
+  greenDark,
   buttonDefault: brown,
   tintColor,
   tabDefault: brown,
@@ -25,3 +28,5 @@ export default {
   noticeBackground: tintColor,
   noticeText: '#fff',
 };
+
+export function getButtonBackground(opacity) { return `rgba(246, 229, 199, ${opacity})` } // color is tan, but need rgba for opacity

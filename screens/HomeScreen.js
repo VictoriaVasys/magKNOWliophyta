@@ -7,18 +7,63 @@ import Environment from '../config/environment';
 import firebase from '../config/firebase';
 
 import { MonoText } from '../components/StyledText';
-import Colors from '../constants/Colors';
+import Colors, {getButtonBackground} from '../constants/Colors';
+
+
+const fullWidth = Dimensions.get('window').width;
+const fullHeight = Dimensions.get('window').height;
+
+const styles = StyleSheet.create({
+  backgroundImage: {
+    height: fullHeight,
+    width: fullWidth
+  },
+  button: {
+    backgroundColor: getButtonBackground(0.7),
+    borderRadius: 10
+  },
+  buttons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: fullWidth * 0.85,
+  },
+  camera: {
+    flex: 1,
+  },
+  cameraContainer: {
+    borderRadius: 10,
+    flex: 1,
+    overflow: 'hidden',
+  },
+  cameraAndButtonContainer: {
+    marginTop: 100,
+    height: 1 * fullWidth,
+    width: 0.8 * fullWidth,
+  },
+  container: {
+    alignItems: 'center',
+    height: fullHeight,
+    flex: 1,
+    justifyContent: 'center',
+    marginTop: -48,
+    opacity: 1,
+  },
+  image: {
+    height: 1 * fullWidth,
+    width: 0.8 * fullWidth,
+  }
+})
 
 export default class HomeScreen extends React.Component {
-  static navigationOptions = {
-    header: null,
-  };
+
   state = {
     cameraOn: false,
     hasCameraPermission: null,
     image: null,
     uploading: false,
-    googleResponse: null
+    googleResponse: null,
+    showAnalyzeButton: true,
+    showNewPhotoButtons: true,
   };
 
   async componentDidMount() {
@@ -30,24 +75,20 @@ export default class HomeScreen extends React.Component {
   render() {
     return (
       <ImageBackground source={require('../assets/images/vintage-poppy-diagram.jpg')} PlaceholderContent={<ActivityIndicator />} style={styles.backgroundImage}>
-        <ScrollView style={styles.container}>
-          {this.renderContent()}
-          {this.state.googleResponse && (
-            <FlatList
-              data={this.state.googleResponse.responses[0].labelAnnotations}
-              extraData={this.state}
-              keyExtractor={this._keyExtractor}
-              renderItem={({ item }) => <Text>Item: {item.description}</Text>}
-            />
-          )}
-          {this._maybeRenderImage()}
-          {this._maybeRenderUploadingOverlay()}
+        <ScrollView>
+          <View style={styles.container}>
+            {this.state.showNewPhotoButtons && this.renderNewPhotoButtons()}
+            {this.renderPlantFamily()}
+            {this._maybeRenderImage()}
+            {this.renderOtherLabels()}
+            {this._maybeRenderUploadingOverlay()}
+          </View>
         </ScrollView>
       </ImageBackground>
     )
   }
 
-  renderContent = () => {
+  renderNewPhotoButtons = () => {
     const { cameraOn, hasCameraPermission, image } = this.state;
 
     if (hasCameraPermission === null) {
@@ -57,63 +98,79 @@ export default class HomeScreen extends React.Component {
     } else if (!cameraOn) {
       return (
         <View style={styles.buttons}>
-        <Button onPress={this._takePhoto} icon={<Icon name='camera-alt' type='material' size={150} color={Colors.buttonDefault} />} type="clear" />
-        <Button onPress={this._pickImage} icon={<Icon name='arrow-downward' type='material' size={150} color={Colors.buttonDefault} />} type="clear" />
+          <Button onPress={this._takePhoto} icon={<Icon name='camera-alt' type='material' size={fullWidth * 0.36} color={Colors.buttonDefault} />} buttonStyle={styles.button} />
+          <Button onPress={this._pickImage} icon={<Icon name='arrow-downward' type='material' size={fullWidth * 0.36} color={Colors.buttonDefault} />} buttonStyle={styles.button} />
         </View>
       )
-    } else if (image) {
-      return <Image style={styles.image} source={image && {uri: image.uri}} PlaceholderContent={<ActivityIndicator />} />
-    } else {
-      return (
-        <View style={styles.cameraAndButtonContainer}>
-          <View style={styles.cameraContainer}>
-            <Camera ref={ref => { this.camera = ref }} style={styles.camera} type={Camera.Constants.Type.back} />
-          </View>
-          <Button onPress={this.snap} icon={<Icon name='radio-button-checked' size={100} type='material' color={Colors.buttonDefault} />} type="clear" />
-          {/* <Image style={{ width: 100, height: 100 }} source={require('../assets/capture.png')}></Image> */}
-        </View>
-      );
+    }
+    // } else if (image) {
+    //   return <Image style={styles.image} source={image && {uri: image.uri}} PlaceholderContent={<ActivityIndicator />} />
+    // } else {
+    //   return (
+    //     <View style={styles.cameraAndButtonContainer}>
+    //       <View style={styles.cameraContainer}>
+    //         <Camera ref={ref => { this.camera = ref }} style={styles.camera} type={Camera.Constants.Type.back} />
+    //       </View>
+    //       <Button onPress={this.snap} icon={<Icon name='radio-button-checked' size={100} type='material' color={Colors.buttonDefault} />} type="clear" />
+    //       {/* <Image style={{ width: 100, height: 100 }} source={require('../assets/capture.png')}></Image> */}
+    //     </View>
+    //   );
+    // }
+  }
+
+  // addImage = async () => {
+  //   let result = await ImagePicker.launchImageLibraryAsync({
+  //     allowsEditing: true,
+  //     aspect: [4, 3],
+  //   });
+
+  //   console.log(result);
+
+  //   if (!result.cancelled) {
+  //     this.setState({ image: result.uri });
+  //   }
+  // }
+
+  // snap = () => {
+  //   if (this.camera) {
+  //     try {
+  //       let image = this.camera.takePictureAsync().then(image => {
+  //         this.setState({ image, showNewPhotoButtons: false })
+  //       })
+  //     } catch (err) {
+  //       alert(err); // TypeError: failed to fetch
+  //     }
+  //   }
+  // }
+
+  // toggleCamera = () => {
+  //   this.setState({cameraOn: true})
+  // };
+
+  // organize = array => {
+  //   return array.map(function (item, i) {
+  //     return (
+  //       <View key={i}>
+  //         <Text>{item}</Text>
+  //       </View>
+  //     );
+  //   });
+  // };
+
+  renderPlantFamily = () => {
+    if (this.state.googleResponse) {
+      const familyItem = this.state.googleResponse.responses[0].labelAnnotations.find((item) => item.description.includes('family'))
+      const family = familyItem ? family.description : "No plant family found"
     }
   }
 
-  addImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-    });
-
-    console.log(result);
-
-    if (!result.cancelled) {
-      this.setState({ image: result.uri });
+  renderOtherLabels = () => {
+    if (this.state.googleResponse) {
+      const labels = this.state.googleResponse.responses[0].labelAnnotations.filter((item) => !item.description.includes('family'))
+      const formattedLabels = labels.map(label => label.description).join(', ')
+      return (<Text h4 h4Style={{ color: Colors.brown, fontSize: 16, backgroundColor: getButtonBackground(0.8) }}>{`Other descriptions include: ${labels && formattedLabels}.`}</Text>)
     }
   }
-
-  snap = () => {
-    if (this.camera) {
-      try {
-        let image = this.camera.takePictureAsync().then(image => {
-          this.setState({ image })
-        })
-      } catch (err) {
-        alert(err); // TypeError: failed to fetch
-      }
-    }
-  }
-
-  toggleCamera = () => {
-    this.setState({cameraOn: true})
-  };
-
-  organize = array => {
-    return array.map(function (item, i) {
-      return (
-        <View key={i}>
-          <Text>{item}</Text>
-        </View>
-      );
-    });
-  };
 
   _maybeRenderUploadingOverlay = () => {
     if (this.state.uploading) {
@@ -135,7 +192,7 @@ export default class HomeScreen extends React.Component {
   };
 
   _maybeRenderImage = () => {
-    let { image, googleResponse } = this.state;
+    let { image, googleResponse, showAnalyzeButton } = this.state;
     if (!image) {
       return;
     }
@@ -143,18 +200,9 @@ export default class HomeScreen extends React.Component {
     return (
       <View
         style={{
-          marginTop: 20,
-          width: 250,
-          borderRadius: 3,
-          elevation: 2
+          margin: 24
         }}
       >
-        <Button
-          style={{ marginBottom: 10 }}
-          onPress={() => this.submitToGoogle()}
-          title="Analyze!"
-        />
-
         <View
           style={{
             borderTopRightRadius: 3,
@@ -166,17 +214,23 @@ export default class HomeScreen extends React.Component {
             overflow: 'hidden'
           }}
         >
-          <Image source={{ uri: image }} style={{ width: 250, height: 250 }} />
+          <Image source={{ uri: image }} style={{ width: 250, height: 250, borderColor: Colors.white, borderWidth: 3, borderRadius: 5 }} />
         </View>
-        <Text
+
+        {showAnalyzeButton && (<Button
+          buttonStyle={{ backgroundColor: getButtonBackground(0.8), marginTop: 5 }}
+          onPress={() => this.submitToGoogle()}
+          title="look up your flower"
+          titleStyle={{ color: Colors.coral, fontWeight: 'bold' }}
+        />)}
+        
+        {/* <Text
           onPress={this._copyToClipboard}
           onLongPress={this._share}
           style={{ paddingVertical: 10, paddingHorizontal: 10 }}
-        />
+        /> */}
 
-        <Text>Raw JSON:</Text>
-
-        {googleResponse && (
+        {/* {googleResponse && (
           <Text
             onPress={this._copyToClipboard}
             onLongPress={this._share}
@@ -184,16 +238,16 @@ export default class HomeScreen extends React.Component {
           >
             JSON.stringify(googleResponse.responses)}
 					</Text>
-        )}
+        )} */}
       </View>
     );
   };
 
-  _keyExtractor = (item, index) => item.id;
+  // _keyExtractor = (item, index) => item.id;
 
-  _renderItem = item => {
-    <Text>response: {JSON.stringify(item)}</Text>;
-  };
+  // _renderItem = item => {
+  //   <Text>response: {JSON.stringify(item)}</Text>;
+  // };
 
   _share = () => {
     Share.share({
@@ -232,7 +286,7 @@ export default class HomeScreen extends React.Component {
 
       if (!pickerResult.cancelled) {
         uploadUrl = await uploadImageAsync(pickerResult.uri);
-        this.setState({ image: uploadUrl });
+        this.setState({ image: uploadUrl, showNewPhotoButtons: false });
       }
     } catch (e) {
       console.log(e);
@@ -276,6 +330,7 @@ export default class HomeScreen extends React.Component {
       console.log(responseJson);
       this.setState({
         googleResponse: responseJson,
+        showAnalyzeButton: false,
         uploading: false
       });
     } catch (error) {
@@ -309,46 +364,6 @@ async function uploadImageAsync(uri) {
 
   return await snapshot.ref.getDownloadURL();
 }
-
-const fullWidth = Dimensions.get('window').width;
-const fullHeight = Dimensions.get('window').height;
-
-const styles = StyleSheet.create({
-  backgroundImage: {
-    height: '100%',
-    width: '100%'
-  },
-  buttons: {
-    flexDirection: 'row'
-  },
-  camera: {
-    // backgroundColor: Colors.buttonDefault,
-    // borderRadius: 5,
-    flex: 1,
-  },
-  cameraContainer: {
-    // backgroundColor: Colors.buttonDefault,
-    borderRadius: 10,
-    flex: 1,
-    overflow: 'hidden',
-  },
-  cameraAndButtonContainer: {
-    marginTop: 100,
-    height: 1 * fullWidth,
-    width: 0.8 * fullWidth,
-  },
-  container: {
-    // alignItems: 'center',
-    // // backgroundColor: 'blue',
-    // flex: 1,
-    // justifyContent: 'center',
-    // opacity: 1,
-  },
-  image: {
-    height: 1 * fullWidth,
-    width: 0.8 * fullWidth,
-  }
-})
 
         // <View style={styles.container}>
       //   <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>

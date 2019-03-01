@@ -6,6 +6,7 @@ import TabBarIcon from '../components/TabBarIcon';
 import HomeScreen from '../screens/HomeScreen';
 import LinksScreen from '../screens/LinksScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import Colors from '../constants/Colors';
 
 const HomeStack = createStackNavigator({
   Home: HomeScreen,
@@ -53,8 +54,12 @@ SettingsStack.navigationOptions = {
   ),
 };
 
-export default createBottomTabNavigator({
-  HomeStack,
-  LinksStack,
-  SettingsStack,
-});
+const tabBarOptions = {
+  activeTintColor: Colors.tabSelected,
+  inactiveTintColor: Colors.tabDefault,
+  style: {
+    backgroundColor: Colors.navBackground,
+  }
+};
+
+export default createBottomTabNavigator({HomeStack,LinksStack,SettingsStack}, {tabBarOptions});

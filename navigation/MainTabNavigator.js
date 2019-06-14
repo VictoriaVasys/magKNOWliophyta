@@ -4,7 +4,7 @@ import { createStackNavigator, createBottomTabNavigator } from 'react-navigation
 
 import TabBarIcon from '../components/TabBarIcon';
 import HomeScreen from '../screens/HomeScreen';
-import LinksScreen from '../screens/LinksScreen';
+import AnalyzeScreen from '../screens/AnalyzeScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import Colors from '../constants/Colors';
 
@@ -37,11 +37,11 @@ HomeStack.navigationOptions = {
   ),
 };
 
-const LinksStack = createStackNavigator({
-  Links: LinksScreen,
+const AnalyzeStack = createStackNavigator({
+  Links: AnalyzeScreen,
 }, { defaultNavigationOptions });
 
-LinksStack.navigationOptions = {
+AnalyzeStack.navigationOptions = {
   tabBarLabel: 'view photos',
   tabBarIcon: ({ focused }) => (
     <TabBarIcon
@@ -75,4 +75,4 @@ const tabBarOptions = {
   }
 };
 
-export default createBottomTabNavigator({HomeStack,LinksStack,SettingsStack}, {tabBarOptions});
+export default createBottomTabNavigator({HomeStack,AnalyzeStack,SettingsStack}, {tabBarOptions});

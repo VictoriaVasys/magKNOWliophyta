@@ -4,7 +4,7 @@ import { ExpoLinksView } from '@expo/samples';
 
 import Colors from '../constants/Colors';
 
-export default class LinksScreen extends React.Component {
+export default class AnalyzeScreen extends React.Component {
   static navigationOptions = {
     title: 'Links',
   };

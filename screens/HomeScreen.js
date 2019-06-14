@@ -42,11 +42,18 @@ const styles = StyleSheet.create({
   },
   container: {
     alignItems: 'center',
+    // flexDirection: 'column',
     height: fullHeight,
     flex: 1,
     justifyContent: 'center',
     marginTop: -48,
-    opacity: 1,
+  },
+  containerWithDescriptions: {
+    alignItems: 'center',
+    height: fullHeight,
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingBottom: 100,
   },
   image: {
     height: 1 * fullWidth,
@@ -73,11 +80,12 @@ export default class HomeScreen extends React.Component {
   }
 
   render() {
+    const {googleResponse, showNewPhotoButtons} = this.state
     return (
       <ImageBackground source={require('../assets/images/vintage-poppy-diagram.jpg')} PlaceholderContent={<ActivityIndicator />} style={styles.backgroundImage}>
         <ScrollView>
-          <View style={styles.container}>
-            {this.state.showNewPhotoButtons && this.renderNewPhotoButtons()}
+          <View style={googleResponse ? styles.containerWithDescriptions : styles.container}>
+            {showNewPhotoButtons && this.renderNewPhotoButtons()}
             {this.renderPlantFamily()}
             {this._maybeRenderImage()}
             {this.renderOtherLabels()}
@@ -158,17 +166,34 @@ export default class HomeScreen extends React.Component {
   // };
 
   renderPlantFamily = () => {
-    if (this.state.googleResponse) {
+    if (this.state.googleResponse && this.state.googleResponse.responses[0].labelAnnotations) {
       const familyItem = this.state.googleResponse.responses[0].labelAnnotations.find((item) => item.description.includes('family'))
-      const family = familyItem ? family.description : "No plant family found"
+      const family = familyItem ? familyItem.description : "No plant family found"
+      return (
+        <View style={{ backgroundColor: Colors.white, padding: 10, width: fullWidth }}>
+          <Text h3 h3Style={{ color: Colors.brown, backgroundColor: getButtonBackground(0.8), textAlign: 'center' }}>{family}</Text>
+        </View>
+      )
+    } else if (this.state.googleResponse) {
+      return (
+        <View style={{ backgroundColor: Colors.white, padding: 10, width: fullWidth }}>
+          <Text h3 h3Style={{ color: Colors.brown, backgroundColor: getButtonBackground(0.8), textAlign: 'center' }}>No labels found</Text>
+        </View>
+      )
     }
   }
 
   renderOtherLabels = () => {
-    if (this.state.googleResponse) {
+    if (this.state.googleResponse && this.state.googleResponse.responses[0].labelAnnotations) {
       const labels = this.state.googleResponse.responses[0].labelAnnotations.filter((item) => !item.description.includes('family'))
-      const formattedLabels = labels.map(label => label.description).join(', ')
-      return (<Text h4 h4Style={{ color: Colors.brown, fontSize: 16, backgroundColor: getButtonBackground(0.8) }}>{`Other descriptions include: ${labels && formattedLabels}.`}</Text>)
+      const formattedLabels = labels.map(label => label.description.toLowerCase()).join(', ')
+      return (
+        <View style={{ backgroundColor: Colors.white, padding: 10, width: fullWidth }}>
+          <Text h4 h4Style={{ color: Colors.brown, fontSize: 16, backgroundColor: getButtonBackground(0.8), textAlign: 'center' }}>{`Other descriptions: ${labels && formattedLabels}`}</Text>
+        </View>
+      )
+    } else if (this.state.googleResponse) {
+      return <View />
     }
   }
 
@@ -218,12 +243,13 @@ export default class HomeScreen extends React.Component {
         </View>
 
         {showAnalyzeButton && (<Button
-          buttonStyle={{ backgroundColor: getButtonBackground(0.8), marginTop: 5 }}
+          buttonStyle={{ backgroundColor: Colors.coral, borderColor: Colors.white, borderRadius: 20, borderWidth: 3, marginTop: 5 }}
           onPress={() => this.submitToGoogle()}
           title="look up your flower"
-          titleStyle={{ color: Colors.coral, fontWeight: 'bold' }}
+          titleStyle={{ color: Colors.white, fontWeight: 'bold' }}
+          type='outline'
         />)}
-        
+
         {/* <Text
           onPress={this._copyToClipboard}
           onLongPress={this._share}
@@ -289,7 +315,7 @@ export default class HomeScreen extends React.Component {
         this.setState({ image: uploadUrl, showNewPhotoButtons: false });
       }
     } catch (e) {
-      console.log(e);
+      console.log('Cannot upload image', e);
       alert('Upload failed, sorry :(');
     } finally {
       this.setState({ uploading: false });
@@ -327,14 +353,14 @@ export default class HomeScreen extends React.Component {
         }
       );
       let responseJson = await response.json();
-      console.log(responseJson);
+      console.log('Vision API json response', responseJson);
       this.setState({
         googleResponse: responseJson,
         showAnalyzeButton: false,
         uploading: false
       });
     } catch (error) {
-      console.log(error);
+      console.log('Vision API error', error);
     }
   };
 }
@@ -346,7 +372,7 @@ async function uploadImageAsync(uri) {
       resolve(xhr.response);
     };
     xhr.onerror = function (e) {
-      console.log(e);
+      console.log('upload image network request failed', e);
       reject(new TypeError('Network request failed'));
     };
     xhr.responseType = 'blob';
